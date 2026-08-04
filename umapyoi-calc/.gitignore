@@ -10,9 +10,26 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+
+# Local environment and credentials
 *.local
+.env
+.env.*
+!.env.example
+!.env.sample
 serviceAccountKey.json
 *.service-account.json
+*-firebase-adminsdk-*.json
+firebase-adminsdk-*.json
+.firebase/
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
 
 # Editor directories and files
 .vscode/*
