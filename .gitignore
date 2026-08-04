@@ -23,6 +23,22 @@ serviceAccountKey.json
 *-firebase-adminsdk-*.json
 firebase-adminsdk-*.json
 
+# Secrets directories (keys may not include predictable names)
+secrets/*.json
+secrets/*.pem
+secrets/*.key
+secrets/*.p12
+secrets/*.pfx
+secrets/*.jks
+secrets/*.keystore
+**/secrets/*.json
+**/secrets/*.pem
+**/secrets/*.key
+**/secrets/*.p12
+**/secrets/*.pfx
+**/secrets/*.jks
+**/secrets/*.keystore
+
 # Private keys and certificates
 *.pem
 *.key
