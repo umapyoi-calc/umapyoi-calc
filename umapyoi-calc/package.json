@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "upload:storage": "node scripts/upload-storage.mjs",
-    "seed:firestore": "node scripts/seed-firestore.mjs"
+    "seed:firestore": "node scripts/seed-firestore.mjs",
+    "sync:data": "npm run upload:storage && npm run seed:firestore",
+    "deploy:hosting": "npm run build && firebase deploy --only hosting --project umapyoi-calc-dev",
+    "publish:auto": "npm run sync:data && npm run deploy:hosting"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

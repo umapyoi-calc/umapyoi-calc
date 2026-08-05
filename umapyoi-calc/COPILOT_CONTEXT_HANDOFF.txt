@@ -1,185 +1,125 @@
-UMAPYOI CALC - COPILOT HANDOFF CONTEXT
-Last updated: 2026-07-27
+UMAPYOI CALC - HANDOFF RAPIDO MULTI-PC
+Last updated: 2026-08-04
 
-1) PROJECT IDENTITY
-- Repository: OnboardingCode/Umamusume-Calculator
-- Working branch: 50-uc-character-info-page-ui-implementation
-- Main working app folder: umapyoi-calc/
-- Legacy/reference folder: old/
+0) TL;DR
+- Trabaja siempre dentro de: umapyoi-calc/
+- Setup nueva PC:
+  1. npm install
+  2. crear .env.local
+  3. firebase login --reauth
+  4. npm run dev
+- Sincronizar datos Firebase desde JSON/imagenes: npm run sync:data
+- Publicar todo (datos + build + hosting): npm run publish:auto
 
-2) WORKSPACE STRUCTURE AND INTENT
-- old/ is the static reference implementation (routes/components/data/images).
-- umapyoi-calc/ is the active React + TypeScript + Vite app now connected to Firebase.
-- Goal reached in this phase: Firebase backend integration and data migration, without redesigning final product UI yet.
+1) Estructura del workspace
+- old/
+  - Fuente legacy de datos e imagenes locales.
+  - JSON principal: old/src/data/character_data.json y old/src/data/card_imgs.json
+- umapyoi-calc/
+  - App activa (React + TS + Vite) conectada a Firebase.
+  - Todos los comandos se ejecutan aqui.
 
-3) WHAT WAS IMPLEMENTED
-A. Firebase client integration in frontend
-- Added Firebase SDK dependencies in package.json.
-- Implemented Firebase app initialization in src/lib/firebase.ts.
-- Frontend uses Firestore and Storage from firebase SDK.
+2) Identidad del proyecto Firebase
+- Firebase project id: umapyoi-calc-dev
+- Bucket esperado: umapyoi-calc-dev.firebasestorage.app
+- Hosting URL: https://umapyoi-calc-dev.web.app
 
-B. Firestore data access layer
-- Implemented in src/services/characters.ts.
-- getCharacterById(id): reads characters/{id}.
-- getCards(maxCards): reads cards collection ordered by id.
+3) Setup en una computadora nueva (one-time)
+1. Instalar Node.js 22+ y npm 11+
+2. Instalar Firebase CLI:
+   npm install -g firebase-tools
+3. Entrar al proyecto correcto:
+   cd C:\ruta\a\workspace\umapyoi-calc\umapyoi-calc
+4. Instalar dependencias:
+   npm install
+5. Crear .env.local en umapyoi-calc/ con:
 
-C. Storage URL resolver
-- Implemented in src/services/storage.ts.
-- getStorageFileUrl(path): returns download URL from Firebase Storage.
+   VITE_FIREBASE_API_KEY=TU_API_KEY
+   VITE_FIREBASE_AUTH_DOMAIN=TU_AUTH_DOMAIN
+   VITE_FIREBASE_PROJECT_ID=umapyoi-calc-dev
+   VITE_FIREBASE_STORAGE_BUCKET=umapyoi-calc-dev.firebasestorage.app
+   VITE_FIREBASE_MESSAGING_SENDER_ID=TU_MESSAGING_SENDER_ID
+   VITE_FIREBASE_APP_ID=TU_APP_ID
+   VITE_FIREBASE_MEASUREMENT_ID=TU_MEASUREMENT_ID
 
-D. App verification UI
-- src/App.tsx currently includes a validation view:
-  - Tests Firestore connection.
-  - Loads character 1001.
-  - Resolves character main image from Storage.
-  - Loads first 12 cards from Firestore and card images from Storage.
-- This is a temporary validation stage, not the final product UX.
+6. Login Firebase:
+   firebase login --reauth
+7. Verificar proyecto activo:
+   firebase use
 
-E. Migration scripts
-- scripts/upload-storage.mjs
-  - Uploads image files from old/public/{main,outfits,racewear} to Storage.
-- scripts/seed-firestore.mjs
-  - Reads old/src/data/character_data.json and old/src/data/card_imgs.json.
-  - Normalizes schema and upserts collections:
-    - characters
-    - cards
-
-F. Firebase Hosting
-- Hosting initialized in project root with:
-  - firebase.json
-  - .firebaserc
-- .firebaserc default project is set to umapyoi-calc-dev.
-- Production hosting deploy succeeded to:
-  - https://umapyoi-calc-dev.web.app
-
-4) FIREBASE BACKEND STATUS
-A. Project
-- Firebase project ID: umapyoi-calc-dev
-
-B. Storage
-- Bucket used by scripts and frontend:
-  - umapyoi-calc-dev.firebasestorage.app
-- Uploaded assets count from migration:
-  - 102 files total
-  - folders: main, outfits, racewear
-
-C. Firestore
-- Seed completed successfully:
-  - characters: 1 document (id 1001)
-  - cards: 100 documents (ids 1001 to 1100)
-
-D. Security rules intended state
-- Firestore:
-  - read allowed only for /characters/* and /cards/*
-  - write denied everywhere
-  - all other collections denied
-- Storage:
-  - read allowed for all paths
-  - write denied for all paths
-
-5) IMPORTANT FILE MAP
-- README.md
-  - Main operating guide (setup, deploy, scripts, troubleshooting).
-- .firebaserc
-  - Must keep default project as umapyoi-calc-dev.
-- firebase.json
-  - Hosting config (public=dist, SPA rewrites).
-- src/lib/firebase.ts
-  - Frontend Firebase app init and db/storage exports.
-- src/services/characters.ts
-  - Firestore queries for characters and cards.
-- src/services/storage.ts
-  - Storage path-to-download-URL helper.
-- scripts/upload-storage.mjs
-  - Bulk Storage upload script.
-- scripts/seed-firestore.mjs
-  - Bulk Firestore seed script.
-- .env.local
-  - Frontend Firebase runtime env vars (local only, never commit).
-
-6) REQUIRED ENV VARIABLES
-A. Frontend runtime env (.env.local)
-- VITE_FIREBASE_API_KEY
-- VITE_FIREBASE_AUTH_DOMAIN
-- VITE_FIREBASE_PROJECT_ID
-- VITE_FIREBASE_STORAGE_BUCKET
-- VITE_FIREBASE_MESSAGING_SENDER_ID
-- VITE_FIREBASE_APP_ID
-- VITE_FIREBASE_MEASUREMENT_ID (optional)
-
-B. Migration scripts env (PowerShell session)
-- FIREBASE_SERVICE_ACCOUNT_PATH
-- FIREBASE_STORAGE_BUCKET_NAME
-Optional overrides:
-- OLD_PUBLIC_DIR
-- OLD_DATA_DIR
-
-7) COMMANDS THAT WERE USED SUCCESSFULLY
-Run from umapyoi-calc/ folder only.
-
-Daily dev:
-- npm install
+4) Comandos diarios
 - npm run dev
 - npm run build
 - npm run lint
+- npm run preview
 
-Deploy:
-- firebase login --reauth
-- firebase deploy --only hosting --project umapyoi-calc-dev
+5) Flujo de datos Firebase (automatizado)
+Requiere service account (solo para scripts admin).
 
-Migration:
+PowerShell (por sesion):
+$env:FIREBASE_SERVICE_ACCOUNT_PATH="C:\ruta\a\tu\service-account.json"
+$env:FIREBASE_STORAGE_BUCKET_NAME="umapyoi-calc-dev.firebasestorage.app"
+
+Opcional si cambias origen local:
+$env:OLD_PUBLIC_DIR="C:\otra\ruta\public"
+$env:OLD_DATA_DIR="C:\otra\ruta\data"
+
+Scripts disponibles:
 - npm run upload:storage
+  - Sube imagenes de old/public/{main,outfits,racewear} a Storage.
 - npm run seed:firestore
+  - Lee JSON y actualiza colecciones characters y cards.
+- npm run sync:data
+  - Ejecuta upload:storage + seed:firestore.
+- npm run deploy:hosting
+  - Build + deploy de hosting.
+- npm run publish:auto
+  - Ejecuta sync:data + deploy:hosting.
 
-8) CRITICAL GOTCHAS DISCOVERED DURING THIS SESSION
-- Running commands in workspace parent folder (instead of umapyoi-calc/) causes npm/firebase context errors.
-- firebase use fails with:
-  - "firebase use must be run from a Firebase project directory"
-  when firebase init not done in that folder.
-- firebase projects:list can fail with 401 when CLI token is stale.
-  Fix: firebase logout + firebase login --reauth
-- Using wrong bucket name causes:
-  - "The specified bucket does not exist."
-  Correct bucket used in this project: umapyoi-calc-dev.firebasestorage.app
-- During interactive firebase init hosting, wrong project can be selected by mistake.
-  Always verify .firebaserc default project after init.
+6) Flujo recomendado para trabajar en varias PCs
+1. Pull de cambios
+2. npm install (si cambio package-lock o package.json)
+3. Cargar variables de sesion para scripts admin (si vas a sincronizar datos)
+4. npm run sync:data
+5. npm run dev para validar
+6. npm run publish:auto cuando quieras publicar
 
-9) SECURITY NOTES
-- Never commit service account key JSON files.
-- Never commit .env.local.
-- Service account is only for admin scripts (upload/seed), never for frontend browser code.
-- If a key leaks, rotate/revoke immediately in Firebase console.
+7) Archivos clave
+- README.md
+- package.json
+- firebase.json
+- .firebaserc
+- src/lib/firebase.ts
+- src/services/characters.ts
+- src/services/storage.ts
+- scripts/upload-storage.mjs
+- scripts/seed-firestore.mjs
 
-10) CURRENT FUNCTIONAL RESULT
-- App builds successfully.
-- App reads data from Firestore.
-- App resolves and displays images from Storage.
-- Hosting deploy is live at umapyoi-calc-dev.web.app.
+8) Troubleshooting rapido
+- Error npm ENOENT package.json:
+  - Estas en la carpeta incorrecta.
+  - Solucion: entrar a umapyoi-calc/ antes de usar npm.
 
-11) WHAT IS NOT DONE YET (NEXT DEVELOPMENT PHASE)
-- Replace temporary validation UI in App.tsx with final product routes/pages.
-- Port or redesign route structure based on old/ as reference:
-  - Home
-  - CharactersCard
-  - CharactersInfo
-  - InheritanceCalPage
-- Keep Firebase data flow while improving domain UX.
+- Error firebase use must be run from a Firebase project directory:
+  - No estas parado donde existen firebase.json y .firebaserc.
+  - Solucion: entrar a umapyoi-calc/.
 
-12) QUICK START ON A NEW MACHINE
-1. Open folder umapyoi-calc/.
-2. npm install
-3. Create .env.local with VITE_* values.
-4. firebase login --reauth
-5. npm run dev
-6. For production publish: npm run build + firebase deploy --only hosting --project umapyoi-calc-dev
+- Error The specified bucket does not exist:
+  - Bucket mal escrito.
+  - Solucion: usar umapyoi-calc-dev.firebasestorage.app.
 
-13) VALIDATION CHECKLIST
-- npm run build finishes without errors.
-- In app UI:
-  - Firestore status shows connected.
-  - Character 1001 name appears.
-  - Character image appears.
-  - Cards grid loads from Firestore + Storage.
-- firebase deploy returns hosting URL for umapyoi-calc-dev.
+- Error Firebase 401 / failed to list projects:
+  - Token expirado.
+  - Solucion: firebase logout y firebase login --reauth.
+
+9) Seguridad
+- No subir service-account.json al repo.
+- No subir .env.local al repo.
+- La service account solo se usa en scripts admin (nunca frontend).
+
+10) Estado funcional actual
+- Frontend conectado a Firestore y Storage.
+- App compila y despliega.
+- Existe UI temporal de validacion en App.tsx (pendiente migrar a UX final por rutas).
 
 End of handoff.

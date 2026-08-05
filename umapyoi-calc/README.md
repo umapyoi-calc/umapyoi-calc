@@ -75,33 +75,30 @@ Si necesitas forzar proyecto:
 firebase use umapyoi-calc-dev
 ```
 
-## 4) Comandos de Desarrollo Diario
+## 4) Comandos NPM Disponibles
 
-### Ejecutar local
+### Desarrollo local
 
-```powershell
-npm run dev
-```
+- `npm run dev` -> levanta Vite en modo desarrollo.
+- `npm run build` -> compila TypeScript y genera `dist`.
+- `npm run lint` -> ejecuta ESLint.
+- `npm run preview` -> sirve localmente el build de `dist`.
 
-### Build local
+### Datos y deploy en Firebase
 
-```powershell
-npm run build
-```
-
-### Lint
-
-```powershell
-npm run lint
-```
-
-### Preview del build
-
-```powershell
-npm run preview
-```
+- `npm run upload:storage` -> sube imagenes a Firebase Storage.
+- `npm run seed:firestore` -> carga JSON a Firestore (`characters` y `cards`).
+- `npm run sync:data` -> ejecuta `upload:storage` + `seed:firestore`.
+- `npm run deploy:hosting` -> ejecuta `build` + deploy de Hosting.
+- `npm run publish:auto` -> ejecuta `sync:data` + `deploy:hosting`.
 
 ## 5) Deploy a Produccion (Hosting)
+
+```powershell
+npm run deploy:hosting
+```
+
+Si quieres hacerlo manual:
 
 ```powershell
 npm run build
@@ -114,10 +111,13 @@ URL esperada del sitio:
 
 ## 6) Scripts de Migracion de Datos (One-time o bajo demanda)
 
-El proyecto incluye scripts para cargar assets y sembrar Firestore:
+El proyecto incluye scripts para cargar assets, sembrar Firestore y desplegar Hosting:
 
 - `npm run upload:storage`
 - `npm run seed:firestore`
+- `npm run sync:data`
+- `npm run deploy:hosting`
+- `npm run publish:auto`
 
 Antes de ejecutarlos, necesitas una Service Account Key (JSON) descargada desde Firebase Console.
 
@@ -139,6 +139,31 @@ npm run upload:storage
 ```powershell
 npm run seed:firestore
 ```
+
+### Automatizar en un solo comando
+
+Sin deploy (solo Storage + Firestore):
+
+```powershell
+npm run sync:data
+```
+
+Con deploy de Hosting incluido:
+
+```powershell
+npm run publish:auto
+```
+
+`publish:auto` ejecuta este flujo:
+
+1. `upload:storage`
+2. `seed:firestore`
+3. `deploy:hosting` (`build` + `firebase deploy --only hosting --project umapyoi-calc-dev`)
+
+Requisitos para automatizar:
+
+- Tener `FIREBASE_SERVICE_ACCOUNT_PATH` y `FIREBASE_STORAGE_BUCKET_NAME` cargadas en la sesion.
+- Haber iniciado sesion en Firebase CLI (`firebase login --reauth`).
 
 Notas:
 
@@ -265,6 +290,7 @@ cd C:\ruta\a\workspace\umapyoi-calc
 1. `npm run dev`
 2. Hacer cambios y validar en local
 3. `npm run build`
-4. `firebase deploy --only hosting --project umapyoi-calc-dev` (solo si quieres publicar)
+4. `npm run deploy:hosting` (solo si quieres publicar cambios de frontend)
+5. `npm run publish:auto` (si tambien actualizaste datos desde JSON/imagenes)
 
 ---
