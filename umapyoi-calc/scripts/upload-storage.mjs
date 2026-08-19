@@ -1,35 +1,123 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
+import { parseArgs } from 'node:util'
 import { cert, getApps, initializeApp } from 'firebase-admin/app'
 import { getStorage } from 'firebase-admin/storage'
 
 const ROOT_DIR = process.cwd()
-const OLD_PUBLIC_DIR = process.env.OLD_PUBLIC_DIR ?? path.resolve(ROOT_DIR, '../old/public')
-const SERVICE_ACCOUNT_PATH =
-  process.env.FIREBASE_SERVICE_ACCOUNT_PATH ?? path.resolve(ROOT_DIR, 'serviceAccountKey.json')
+const DEFAULT_ACTIVE_PUBLIC_DIR = path.resolve(ROOT_DIR, 'public')
+const DEFAULT_LEGACY_PUBLIC_DIR = path.resolve(ROOT_DIR, '../old/public')
+const DEFAULT_SERVICE_ACCOUNT_PATH = path.resolve(ROOT_DIR, 'serviceAccountKey.json')
+const DEFAULT_FOLDERS = ['main', 'outfits', 'racewear']
 
-if (!existsSync(SERVICE_ACCOUNT_PATH)) {
-  throw new Error(
-    `Service account key not found at ${SERVICE_ACCOUNT_PATH}. Set FIREBASE_SERVICE_ACCOUNT_PATH or place serviceAccountKey.json in project root.`,
-  )
+function resolveDefaultPublicDir() {
+  if (existsSync(DEFAULT_ACTIVE_PUBLIC_DIR)) {
+    return DEFAULT_ACTIVE_PUBLIC_DIR
+  }
+
+  return DEFAULT_LEGACY_PUBLIC_DIR
 }
 
-const serviceAccount = JSON.parse(readFileSync(SERVICE_ACCOUNT_PATH, 'utf8'))
-const bucketName = process.env.FIREBASE_STORAGE_BUCKET_NAME ?? `${serviceAccount.project_id}.firebasestorage.app`
+function printHelp() {
+  console.log(`
+Upload image assets to Firebase Storage.
 
-if (!getApps().length) {
-  initializeApp({
-    credential: cert(serviceAccount),
-    storageBucket: bucketName,
+Usage:
+  node scripts/upload-storage.mjs [options]
+
+Options:
+  --public-dir <path>          Source directory containing main/outfits/racewear.
+                               Default: public (fallback: ../old/public).
+  --folders <csv>              Comma separated folder names (default: main,outfits,racewear).
+  --bucket <name>              Target Storage bucket name.
+  --service-account <path>     Service account JSON path.
+  --dry-run                    Validate files and print planned uploads only.
+  -h, --help                   Show this help message.
+
+Environment aliases:
+  PUBLIC_DIR (preferred) or OLD_PUBLIC_DIR
+  FIREBASE_STORAGE_BUCKET_NAME
+  FIREBASE_SERVICE_ACCOUNT_PATH
+`)
+}
+
+function parseFolderList(value) {
+  if (!value) {
+    return DEFAULT_FOLDERS
+  }
+
+  const folders = String(value)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+
+  return folders.length ? folders : DEFAULT_FOLDERS
+}
+
+function parseOptions() {
+  const { values } = parseArgs({
+    options: {
+      'public-dir': { type: 'string' },
+      folders: { type: 'string' },
+      bucket: { type: 'string' },
+      'service-account': { type: 'string' },
+      'dry-run': { type: 'boolean', default: false },
+      help: { type: 'boolean', short: 'h' },
+    },
+    allowPositionals: false,
   })
+
+  if (values.help) {
+    printHelp()
+    process.exit(0)
+  }
+
+  return {
+    publicDir: path.resolve(
+      ROOT_DIR,
+      values['public-dir'] ?? process.env.PUBLIC_DIR ?? process.env.OLD_PUBLIC_DIR ?? resolveDefaultPublicDir(),
+    ),
+    bucketName: values.bucket ?? process.env.FIREBASE_STORAGE_BUCKET_NAME ?? '',
+    serviceAccountPath: path.resolve(
+      ROOT_DIR,
+      values['service-account'] ?? process.env.FIREBASE_SERVICE_ACCOUNT_PATH ?? DEFAULT_SERVICE_ACCOUNT_PATH,
+    ),
+    dryRun: values['dry-run'],
+    folders: parseFolderList(values.folders),
+  }
 }
 
-const bucket = getStorage().bucket()
-const folders = ['main', 'outfits', 'racewear']
+const options = parseOptions()
+let bucket = null
+
+function getBucket() {
+  if (bucket) {
+    return bucket
+  }
+
+  if (!existsSync(options.serviceAccountPath)) {
+    throw new Error(
+      `Service account key not found at ${options.serviceAccountPath}. Set FIREBASE_SERVICE_ACCOUNT_PATH, use --service-account, or place serviceAccountKey.json in project root.`,
+    )
+  }
+
+  const serviceAccount = JSON.parse(readFileSync(options.serviceAccountPath, 'utf8'))
+  const resolvedBucketName = options.bucketName || `${serviceAccount.project_id}.firebasestorage.app`
+
+  if (!getApps().length) {
+    initializeApp({
+      credential: cert(serviceAccount),
+      storageBucket: resolvedBucketName,
+    })
+  }
+
+  bucket = getStorage().bucket()
+  return bucket
+}
 
 async function uploadFolder(folderName) {
-  const folderPath = path.join(OLD_PUBLIC_DIR, folderName)
+  const folderPath = path.join(options.publicDir, folderName)
   if (!existsSync(folderPath)) {
     console.warn(`[skip] Folder not found: ${folderPath}`)
     return 0
@@ -44,29 +132,46 @@ async function uploadFolder(folderName) {
     const sourcePath = path.join(folderPath, file.name)
     const destination = `${folderName}/${file.name}`
 
-    await bucket.upload(sourcePath, {
-      destination,
-      metadata: {
-        cacheControl: 'public,max-age=31536000,immutable',
-      },
-    })
+    if (options.dryRun) {
+      console.log(`[dry-run] Would upload: ${destination}`)
+    } else {
+      await getBucket().upload(sourcePath, {
+        destination,
+        metadata: {
+          cacheControl: 'public,max-age=31536000,immutable',
+        },
+      })
+
+      console.log(`[ok] Uploaded: ${destination}`)
+    }
 
     uploadedCount += 1
-    console.log(`[ok] Uploaded: ${destination}`)
   }
 
   return uploadedCount
 }
 
 async function main() {
-  console.log(`Using Storage bucket: ${bucket.name}`)
-  console.log(`Reading local files from: ${OLD_PUBLIC_DIR}`)
+  console.log(`Reading local files from: ${options.publicDir}`)
+  console.log(`Folders: ${options.folders.join(', ')}`)
+  console.log(`Mode: ${options.dryRun ? 'dry-run (no writes)' : 'write'}`)
+
+  if (options.dryRun) {
+    console.log('Dry-run does not require Firebase credentials.')
+  } else {
+    console.log(`Using Storage bucket: ${getBucket().name}`)
+  }
 
   let totalUploaded = 0
 
-  for (const folder of folders) {
+  for (const folder of options.folders) {
     const count = await uploadFolder(folder)
     totalUploaded += count
+  }
+
+  if (options.dryRun) {
+    console.log(`Done. Dry-run validated ${totalUploaded} file(s).`)
+    return
   }
 
   console.log(`Done. Uploaded ${totalUploaded} file(s) to Firebase Storage.`)

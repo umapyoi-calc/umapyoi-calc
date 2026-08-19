@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "upload:storage": "node scripts/upload-storage.mjs",
+    "check:storage": "node scripts/upload-storage.mjs --dry-run",
     "seed:firestore": "node scripts/seed-firestore.mjs",
+    "check:seed": "node scripts/seed-firestore.mjs --dry-run",
+    "check:data": "npm run check:storage && npm run check:seed",
     "sync:data": "npm run upload:storage && npm run seed:firestore",
     "deploy:hosting": "npm run build && firebase deploy --only hosting --project umapyoi-calc-dev",
     "publish:auto": "npm run sync:data && npm run deploy:hosting"

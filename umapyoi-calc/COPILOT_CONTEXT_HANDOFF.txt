@@ -54,21 +54,35 @@ Last updated: 2026-08-04
 - npm run preview
 
 5) Flujo de datos Firebase (automatizado)
-Requiere service account (solo para scripts admin).
+Requiere service account para escritura (scripts admin).
+Nota: npm run upload:storage -- -- --dry-run y npm run seed:firestore -- -- --dry-run validan sin escribir y sin credenciales.
+Con npm 11 en PowerShell usa doble separador para flags: -- --
 
 PowerShell (por sesion):
 $env:FIREBASE_SERVICE_ACCOUNT_PATH="C:\ruta\a\tu\service-account.json"
 $env:FIREBASE_STORAGE_BUCKET_NAME="umapyoi-calc-dev.firebasestorage.app"
 
 Opcional si cambias origen local:
+$env:PUBLIC_DIR="C:\otra\ruta\public"
+$env:DATA_DIR="C:\otra\ruta\data"
+
+# Compatibilidad legacy:
 $env:OLD_PUBLIC_DIR="C:\otra\ruta\public"
 $env:OLD_DATA_DIR="C:\otra\ruta\data"
 
 Scripts disponibles:
 - npm run upload:storage
-  - Sube imagenes de old/public/{main,outfits,racewear} a Storage.
+  - Sube imagenes de public/{main,outfits,racewear} a Storage (fallback legacy: old/public).
+  - Flags utiles: --dry-run, --public-dir, --folders, --bucket, --service-account.
+- npm run check:storage
+  - Dry-run de upload:storage (valida archivos sin subir).
 - npm run seed:firestore
-  - Lee JSON y actualiza colecciones characters y cards.
+  - Lee JSON de src/data (fallback legacy: old/src/data) y actualiza colecciones characters y cards.
+  - Flags utiles: --dry-run, --only characters|cards, --strict, --data-dir, --characters-file, --cards-file.
+- npm run check:seed
+  - Dry-run de seed:firestore (valida JSON sin escribir).
+- npm run check:data
+  - Ejecuta check:storage + check:seed.
 - npm run sync:data
   - Ejecuta upload:storage + seed:firestore.
 - npm run deploy:hosting
