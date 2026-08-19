@@ -114,12 +114,96 @@ URL esperada del sitio:
 El proyecto incluye scripts para cargar assets, sembrar Firestore y desplegar Hosting:
 
 - `npm run upload:storage`
+- `npm run check:storage` (dry-run sin subir)
 - `npm run seed:firestore`
+- `npm run check:seed` (dry-run sin escribir)
+- `npm run check:data` (check:storage + check:seed)
 - `npm run sync:data`
 - `npm run deploy:hosting`
 - `npm run publish:auto`
 
-Antes de ejecutarlos, necesitas una Service Account Key (JSON) descargada desde Firebase Console.
+Para `upload:storage` y `seed:firestore` en modo escritura, necesitas una Service Account Key (JSON) descargada desde Firebase Console.
+El modo `--dry-run` de `upload:storage` y `seed:firestore` no escribe en Firebase y no requiere credenciales.
+
+### Donde colocar tus datos reales
+
+- Imagenes de personaje: `public/main/*.png`
+- Banners/cards: `public/outfits/*.png`
+- Racewear: `public/racewear/*.png`
+- JSON de personajes: `src/data/character_data.json`
+- JSON de cards: `src/data/card_imgs.json`
+
+Defaults actuales de scripts:
+
+- `upload:storage` usa `public/` por defecto (fallback: `../old/public`).
+- `seed:firestore` usa `src/data/` por defecto (fallback: `../old/src/data`).
+
+### Formato JSON esperado
+
+`character_data.json` (array de objetos):
+
+```json
+[
+  {
+    "id": 1001,
+    "nameEN": "Special Week",
+    "nameJP": "スペシャルウィーク",
+    "images": {
+      "banner": "public/outfits/card-1001.png",
+      "main": "public/main/main-1001.png",
+      "racewear": "public/racewear/racewear-1001.png"
+    },
+    "stats": { "speed": 83, "stamina": 88, "power": 98, "guts": 90, "wit": 91 },
+    "Track": { "Turf": "A", "Dirt": "G" },
+    "Distance": { "sprint": "F", "mile": "C", "medium": "A", "long": "A" },
+    "Style": { "front": "G", "pace": "A", "late": "A", "end": "C" },
+    "Growth Rate": {
+      "growth-speed": "-",
+      "growth-stamina": "20%",
+      "growth-power": "-",
+      "growth-guts": "-",
+      "growth-wit": "10%"
+    },
+    "Details": {
+      "intro": "...",
+      "description": "...",
+      "birthday": "May 2",
+      "height": "158cm",
+      "measurement1": "B81",
+      "measurement2": "W56",
+      "measurement3": "H81",
+      "weight": "...",
+      "grade": "...",
+      "residence": "...",
+      "likes": "...",
+      "dislikes": "...",
+      "earsFact": "...",
+      "tailFact": "...",
+      "shoeSizeL": "23.5cm",
+      "shoeSizeR": "23.0cm",
+      "familyFact": "..."
+    }
+  }
+]
+```
+
+`card_imgs.json` (array de objetos):
+
+```json
+[
+  {
+    "id": 1001,
+    "caption": "Special Week Banner",
+    "banner": "public/outfits/card-1001.png"
+  }
+]
+```
+
+Reglas practicas:
+
+- `id` debe ser entero positivo y unico dentro de cada archivo.
+- Las rutas en `images.*` y `banner` deben usar prefijo `public/`.
+- Verifica que exista el archivo real correspondiente en `public/`.
 
 ### Variables de entorno para scripts (PowerShell)
 
@@ -134,10 +218,49 @@ $env:FIREBASE_STORAGE_BUCKET_NAME="umapyoi-calc-dev.firebasestorage.app"
 npm run upload:storage
 ```
 
+Opciones disponibles (`npm run upload:storage -- -- --help`):
+
+```powershell
+# Validar sin subir archivos
+npm run upload:storage -- -- --dry-run
+
+# Usar carpeta de origen personalizada
+npm run upload:storage -- -- --public-dir "C:\otra\ruta\public"
+
+# Elegir carpetas especificas
+npm run upload:storage -- -- --folders "main,outfits,racewear"
+
+# Forzar bucket o service account
+npm run upload:storage -- -- --bucket "umapyoi-calc-dev.firebasestorage.app"
+npm run upload:storage -- -- --service-account "C:\ruta\a\service-account.json"
+```
+
 ### Sembrar Firestore (characters y cards)
 
 ```powershell
 npm run seed:firestore
+```
+
+Opciones disponibles (`npm run seed:firestore -- -- --help`):
+
+Nota: con npm 11 en PowerShell usa doble separador `-- --` para reenviar flags al script.
+
+```powershell
+# Validar JSON sin escribir en Firestore
+npm run seed:firestore -- -- --dry-run
+
+# Cargar solo una coleccion
+npm run seed:firestore -- -- --only characters
+npm run seed:firestore -- -- --only cards
+
+# Forzar error si hay IDs invalidos/duplicados
+npm run seed:firestore -- -- --strict
+
+# Usar rutas personalizadas
+npm run seed:firestore -- -- --data-dir "C:\otra\ruta\data"
+npm run seed:firestore -- -- --characters-file "characters.custom.json"
+npm run seed:firestore -- -- --cards-file "cards.custom.json"
+npm run seed:firestore -- -- --service-account "C:\ruta\a\service-account.json"
 ```
 
 ### Automatizar en un solo comando
@@ -167,12 +290,17 @@ Requisitos para automatizar:
 
 Notas:
 
-- `upload:storage` toma archivos desde `../old/public` por defecto.
-- `seed:firestore` toma JSON desde `../old/src/data` por defecto.
+- `upload:storage` toma archivos desde `public` por defecto (fallback: `../old/public`).
+- `seed:firestore` toma JSON desde `src/data` por defecto (fallback: `../old/src/data`).
+- Si ejecutas desde otra carpeta, usa `--data-dir`, `--characters-file` y `--cards-file`.
 
 Variables opcionales para rutas custom:
 
 ```powershell
+$env:PUBLIC_DIR="C:\otra\ruta\public"
+$env:DATA_DIR="C:\otra\ruta\data"
+
+# Compatibilidad legacy (todavia soportadas)
 $env:OLD_PUBLIC_DIR="C:\otra\ruta\public"
 $env:OLD_DATA_DIR="C:\otra\ruta\data"
 ```
