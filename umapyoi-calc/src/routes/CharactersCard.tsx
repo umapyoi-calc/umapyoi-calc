@@ -114,7 +114,7 @@ const CharactersCard = () => {
 
           
 {currentCards.map((card, index) => {
-  const globalIndex = startIndex + index // Mantiene el orden de los colores
+  const globalIndex = startIndex + index 
   const borderColor = borderPalette[globalIndex % borderPalette.length]
   const bgColorWithOpacity = `${borderColor}33`;
 
