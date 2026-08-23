@@ -227,16 +227,23 @@ npm run sync:data
 Ayuda de upload:
 
 ```powershell
-npm run upload:storage -- -- --help
+npm run upload:storage -- --help
 ```
 
 Ayuda de seed:
 
 ```powershell
-npm run seed:firestore -- -- --help
+npm run seed:firestore -- --help
 ```
 
-Con npm 11 en PowerShell, usa doble separador `-- --` para reenviar flags.
+En npm (incluyendo npm 11 en PowerShell), usa un solo separador `--` para reenviar flags.
+
+Ejemplos correctos:
+
+```powershell
+npm run upload:storage -- --dry-run
+npm run seed:firestore -- --dry-run
+```
 
 ## Deploy
 

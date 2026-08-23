@@ -63,7 +63,7 @@ const CharactersInfo = () => {
   const [searchParams] = useSearchParams()
   const umaId = searchParams.get('id') ?? '1001'
 
-  const [status, setStatus] = useState('Loading character from Firestore...')
+  const [, setStatus] = useState('Loading character from Firestore...')
   const [character, setCharacter] = useState<CharacterDocument | null>(null)
   const [images, setImages] = useState<CharacterImagesPreview>({
     mainUrl: '',

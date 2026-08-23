@@ -55,8 +55,8 @@ Last updated: 2026-08-04
 
 5) Flujo de datos Firebase (automatizado)
 Requiere service account para escritura (scripts admin).
-Nota: npm run upload:storage -- -- --dry-run y npm run seed:firestore -- -- --dry-run validan sin escribir y sin credenciales.
-Con npm 11 en PowerShell usa doble separador para flags: -- --
+Nota: npm run upload:storage -- --dry-run y npm run seed:firestore -- --dry-run validan sin escribir y sin credenciales.
+En npm (incluyendo npm 11 en PowerShell) usa un solo separador para reenviar flags: --
 
 PowerShell (por sesion):
 $env:FIREBASE_SERVICE_ACCOUNT_PATH="C:\ruta\a\tu\service-account.json"
